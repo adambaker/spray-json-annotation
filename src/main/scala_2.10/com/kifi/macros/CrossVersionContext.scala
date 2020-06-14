@@ -1,4 +1,4 @@
-package com.kifi.macros
+package us.logico_philosophic.macros
 
 import scala.reflect.macros._
 import scala.language.experimental.macros

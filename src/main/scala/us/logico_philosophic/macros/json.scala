@@ -1,13 +1,10 @@
-package com.kifi.macros
+package us.logico_philosophic.macros
 
 import scala.reflect.macros._
 import scala.language.experimental.macros
 import scala.annotation.StaticAnnotation
 
 import CrossVersionDefs._
-
-object jsonMacroInstance extends jsonMacro(false)
-object jsonStrictMacroInstance extends jsonMacro(true)
 
 /**
  * "@json" macro annotation for case classes
@@ -24,24 +21,10 @@ object jsonStrictMacroInstance extends jsonMacro(true)
  * then A(4) will be serialized as '4' instead of '{"value": 4}'.
  */
 class json extends StaticAnnotation {
-  def macroTransform(annottees: Any*): Any = macro jsonMacroInstance.impl
+  def macroTransform(annottees: Any*): Any = macro jsonMacro.impl
 }
 
-/**
- * "@jsonstrict" macro annotation for case classes
- *
- * Same as "@json" annotation, except that it always uses the default Play formatter.
- * For example, if A is defined as:
- *
- *     case class A(value: Int)
- *
- * then A(4) will be serialized as '{"value": 4}'.
- */
-class jsonstrict extends StaticAnnotation {
-  def macroTransform(annottees: Any*): Any = macro jsonStrictMacroInstance.impl
-}
-
-class jsonMacro(isStrict: Boolean) {
+object jsonMacro {
   def impl(c: CrossVersionContext)(annottees: c.Expr[Any]*): c.Expr[Any] = {
     import c.universe._
 
@@ -57,21 +40,10 @@ class jsonMacro(isStrict: Boolean) {
     def jsonFormatter(className: TypeName, fields: List[ValDef]) = {
       fields.length match {
         case 0 => c.abort(c.enclosingPosition, "Cannot create json formatter for case class with no fields")
-        case 1 if !isStrict => {
-          // use the serializer for the field
-          q"""
-            implicit val jsonAnnotationFormat = {
-              import play.api.libs.json._
-              Format(
-                __.read[${fields.head.tpt}].map(s => ${className.toTermName}(s)),
-                new Writes[$className] { def writes(o: $className) = Json.toJson(o.${fields.head.name}) }
-              )
-            }
-          """
-        }
         case _ => {
+          val ctor = q"spray.json.DefaultJsonProtocol.${TermName("jsonFormat" + fields.length)}"
           // use Play's macro
-          q"implicit val jsonAnnotationFormat = play.api.libs.json.Json.format[$className]"
+          q"implicit val _j:spray.json.RootJsonFormat[$className] = $ctor(${className.toTermName}.apply)"
         }
       }
     }
