@@ -28,13 +28,12 @@ object jsonMacro {
   def impl(c: CrossVersionContext)(annottees: c.Expr[Any]*): c.Expr[Any] = {
     import c.universe._
 
-    def extractClassNameAndFields(classDecl: ClassDef) = {
-      try {
-        val q"case class $className(..$fields) extends ..$bases { ..$body }" = classDecl
+    def extractClassNameAndFields(classDecl: ClassDef) = classDecl match {
+      case q"case class $className(..$fields) extends ..$bases { ..$body }" =>
         (className, fields)
-      } catch {
-        case _: MatchError => c.abort(c.enclosingPosition, "Annotation is only supported on case class")
-      }
+      case q"final case class $className(..$fields) extends ..$bases { ..$body }" =>
+        (className, fields)
+      case _: Any => c.abort(c.enclosingPosition, "Annotation is only supported on case class")
     }
 
     def jsonFormatter(className: TypeName, fields: List[ValDef]) = {
