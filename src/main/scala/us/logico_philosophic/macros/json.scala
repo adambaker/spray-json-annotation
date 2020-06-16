@@ -4,8 +4,6 @@ import scala.reflect.macros._
 import scala.language.experimental.macros
 import scala.annotation.StaticAnnotation
 
-import CrossVersionDefs._
-
 /**
  * "@json" macro annotation for case classes
  *
@@ -25,7 +23,7 @@ class json extends StaticAnnotation {
 }
 
 object jsonMacro {
-  def impl(c: CrossVersionContext)(annottees: c.Expr[Any]*): c.Expr[Any] = {
+  def impl(c: whitebox.Context)(annottees: c.Expr[Any]*): c.Expr[Any] = {
     import c.universe._
 
     def extractClassNameAndFields(classDecl: ClassDef) = classDecl match {
@@ -77,7 +75,8 @@ object jsonMacro {
 
     annottees.map(_.tree) match {
       case (classDecl: ClassDef) :: Nil => modifiedDeclaration(classDecl)
-      case (classDecl: ClassDef) :: (compDecl: ModuleDef) :: Nil => modifiedDeclaration(classDecl, Some(compDecl))
+      case (classDecl: ClassDef) :: (compDecl: ModuleDef) :: Nil =>
+        modifiedDeclaration(classDecl, Some(compDecl))
       case _ => c.abort(c.enclosingPosition, "Invalid annottee")
     }
   }
