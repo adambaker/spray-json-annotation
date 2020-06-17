@@ -40,7 +40,10 @@ object jsonMacro {
         case _ => {
           val ctor = q"spray.json.DefaultJsonProtocol.${TermName("jsonFormat" + fields.length)}"
           // use Play's macro
-          q"implicit val _j:spray.json.RootJsonFormat[$className] = $ctor(${className.toTermName}.apply)"
+          q"""
+          implicit val _j:spray.json.RootJsonFormat[$className] = {
+            import spray.json.DefaultJsonProtocol._
+            $ctor(${className.toTermName}.apply)}"""
         }
       }
     }

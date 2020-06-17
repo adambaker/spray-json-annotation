@@ -2,7 +2,6 @@ package us.logico_philosophic.macros
 
 import utest._
 import spray.json.{enrichAny, enrichString}
-import spray.json.DefaultJsonProtocol._
 
 object JsonMacroTests extends TestSuite { val tests = Tests {
   "one field" - {
